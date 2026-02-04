@@ -1,27 +1,24 @@
 import {
   Photo,
-  PhotoSetCategory,
   altTextForPhoto,
   doesPhotoNeedBlurCompatibility,
 } from '.';
+import { PhotoSetCategory } from '../category';
 import ImageSmall from '@/components/image/ImageSmall';
 import Link from 'next/link';
 import { clsx } from 'clsx/lite';
-import { pathForPhoto } from '@/app/paths';
+import { pathForPhoto } from '@/app/path';
 import { SHOULD_PREFETCH_ALL_LINKS } from '@/app/config';
 import { useRef } from 'react';
-import useVisible from '@/utility/useVisible';
+import useVisibility from '@/utility/useVisibility';
 
 export default function PhotoSmall({
   photo,
-  tag,
-  camera,
-  simulation,
-  focal,
   selected,
   className,
   prefetch = SHOULD_PREFETCH_ALL_LINKS,
   onVisible,
+  ...categories
 }: {
   photo: Photo
   selected?: boolean
@@ -31,12 +28,12 @@ export default function PhotoSmall({
 } & PhotoSetCategory) {
   const ref = useRef<HTMLAnchorElement>(null);
 
-  useVisible({ ref, onVisible });
+  useVisibility({ ref, onVisible });
 
   return (
     <Link
       ref={ref}
-      href={pathForPhoto({ photo, tag, camera, simulation, focal })}
+      href={pathForPhoto({ photo, ...categories })}
       className={clsx(
         className,
         'active:brightness-75',

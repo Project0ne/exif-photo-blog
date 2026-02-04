@@ -1,9 +1,9 @@
 'use client';
 
 import { clsx } from 'clsx/lite';
-import Checkbox from './primitives/Checkbox';
-import { useAppState } from '@/state/AppState';
+import SimpleCheckbox from './primitives/SimpleCheckbox';
 import Spinner from './Spinner';
+import { useSelectPhotosState } from '@/admin/select/SelectPhotosState';
 
 export default function SelectTileOverlay({
   isSelected,
@@ -12,7 +12,7 @@ export default function SelectTileOverlay({
   isSelected: boolean
   onSelectChange: () => void
 }) {
-  const { isPerformingSelectEdit } = useAppState();
+  const { isPerformingSelectEdit } = useSelectPhotosState();
 
   return (
     <div className={clsx(
@@ -45,7 +45,7 @@ export default function SelectTileOverlay({
               className="m-[1px]"
             />
             : null
-          : <Checkbox
+          : <SimpleCheckbox
             className={clsx(
               'text-white',
               // Required to prevent Safari jitter

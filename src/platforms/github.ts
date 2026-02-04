@@ -5,7 +5,6 @@ import {
 } from '@/app/config';
 
 const DEFAULT_BRANCH = 'main';
-const CACHE_GITHUB_REQUESTS = false;
 const GITHUB_API_ERROR = 'API rate limit exceeded';
 
 interface RepoParams {
@@ -17,7 +16,7 @@ interface RepoParams {
 
 const fetchGitHub = async (
   url: string,
-  cacheRequest = CACHE_GITHUB_REQUESTS,
+  cacheRequest = true,
 ) => {
   const data = await fetch(
     url,

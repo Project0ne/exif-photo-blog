@@ -1,7 +1,7 @@
 import { ReactNode } from 'react';
 import Link from 'next/link';
 import { FiArrowLeft } from 'react-icons/fi';
-import SiteGrid from './SiteGrid';
+import AppGrid from './AppGrid';
 import { clsx } from 'clsx/lite';
 import Badge from './Badge';
 import Spinner from './Spinner';
@@ -24,9 +24,9 @@ function AdminChildPage({
   children: ReactNode,
 }) {
   return (
-    <SiteGrid
+    <AppGrid
       contentMain={
-        <div className="space-y-6">
+        <div className="space-y-5">
           {(backPath || breadcrumb || accessory) &&
             <div className={clsx(
               'flex items-center gap-x-2 gap-y-3',

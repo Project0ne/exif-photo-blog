@@ -6,15 +6,15 @@ export default function ScoreCard({
   children,
   className,
 }: {
-  title?: string,
+  title?: ReactNode,
   children: ReactNode,
   className?: string,
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {title &&
         <div className={clsx(
-          'pl-[15px]',
+          'pl-[15px] h-7 pb-1 flex items-end',
           'uppercase font-medium tracking-wider text-[0.8rem]',
           'text-medium',
         )}>

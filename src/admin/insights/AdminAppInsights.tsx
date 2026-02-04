@@ -1,84 +1,69 @@
 import {
   getPhotosMeta,
   getUniqueCameras,
-  getUniqueFilmSimulations,
+  getUniqueFilms,
   getUniqueFocalLengths,
+  getUniqueLenses,
+  getUniqueRecipes,
   getUniqueTags,
-} from '@/photo/db/query';
+  getPhotosInNeedOfUpdateCount,
+} from '@/photo/query';
 import AdminAppInsightsClient from './AdminAppInsightsClient';
-import {
-  APP_CONFIGURATION,
-  GRID_HOMEPAGE_ENABLED,
-  HAS_STATIC_OPTIMIZATION,
-  IS_PRODUCTION,
-  MATTE_PHOTOS,
-} from '@/app/config';
-import { OUTDATED_THRESHOLD } from '@/photo';
-import { getGitHubMetaForCurrentApp, getSignificantInsights } from '.';
-
-const BASIC_PHOTO_INSTALLATION_COUNT = 32;
+import { getAllInsights, getGitHubMetaForCurrentApp } from '.';
+import { APP_CONFIGURATION, USED_DEPRECATED_ENV_VARS } from '@/app/config';
 
 export default async function AdminAppInsights() {
   const [
     { count: photosCount, dateRange },
     { count: photosCountHidden },
-    { count: photosCountOutdated },
+    photosCountNeedSync,
     { count: photosCountPortrait },
-    tags,
-    cameras,
-    filmSimulations,
-    focalLengths,
     codeMeta,
+    cameras,
+    lenses,
+    tags,
+    recipes,
+    films,
+    focalLengths,
   ] = await Promise.all([
     getPhotosMeta({ hidden: 'include' }),
     getPhotosMeta({ hidden: 'only' }),
-    getPhotosMeta({ hidden: 'include', updatedBefore: OUTDATED_THRESHOLD }),
+    getPhotosInNeedOfUpdateCount(),
     getPhotosMeta({ maximumAspectRatio: 0.9 }),
-    getUniqueTags(),
-    getUniqueCameras(),
-    getUniqueFilmSimulations(),
-    getUniqueFocalLengths(),
     getGitHubMetaForCurrentApp(),
+    getUniqueCameras(),
+    getUniqueLenses(),
+    getUniqueTags(),
+    getUniqueRecipes(),
+    getUniqueFilms(),
+    getUniqueFocalLengths(),
   ]);
-  
-  const { isAiTextGenerationEnabled } = APP_CONFIGURATION;
-
-  const {
-    forkBehind,
-    noAiRateLimiting,
-    outdatedPhotos,
-  } = getSignificantInsights({
-    codeMeta,
-    photosCountOutdated,
-  });
 
   return (
     <AdminAppInsightsClient
       codeMeta={codeMeta}
-      insights={{
-        noFork: !codeMeta?.isForkedFromBase && !codeMeta?.isBaseRepo,
-        forkBehind,
-        noAi: !isAiTextGenerationEnabled,
-        noAiRateLimiting,
-        outdatedPhotos,
-        photoMatting: photosCountPortrait > 0 && !MATTE_PHOTOS,
-        gridFirst: (
-          photosCount >= BASIC_PHOTO_INSTALLATION_COUNT &&
-          !GRID_HOMEPAGE_ENABLED
-        ),
-        noStaticOptimization: !HAS_STATIC_OPTIMIZATION,
-      }}
+      nextVersion={APP_CONFIGURATION.nextVersion}
+      reactVersion={APP_CONFIGURATION.reactVersion}
+      nodeVersion={APP_CONFIGURATION.nodeVersion}
+      insights={getAllInsights({
+        codeMeta,
+        photosCount,
+        photosCountNeedSync,
+        photosCountPortrait,
+      })}
+      usedDeprecatedEnvVars={USED_DEPRECATED_ENV_VARS}
       photoStats={{
         photosCount,
         photosCountHidden,
-        photosCountOutdated,
-        tagsCount: tags.length,
+        photosCountNeedSync,
         camerasCount: cameras.length,
-        filmSimulationsCount: filmSimulations.length,
+        lensesCount: lenses.length,
+        tagsCount: tags.length,
+        recipesCount: recipes.length,
+        filmsCount: films.length,
         focalLengthsCount: focalLengths.length,
         dateRange,
       }}
-      debug={!IS_PRODUCTION}
     />
   );
 }

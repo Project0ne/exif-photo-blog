@@ -10,6 +10,8 @@ export default function PathLoaderButton({
   loaderDelay = 100,
   shouldScroll = true,
   shouldReplace,
+  isLoading,
+  onClick,
   children,
   ...props
 }: {
@@ -32,6 +34,7 @@ export default function PathLoaderButton({
       }, loaderDelay);
       return () => clearTimeout(timeout);
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShouldShowLoader(false);
     }
   }, [isPending, loaderDelay]);
@@ -45,7 +48,8 @@ export default function PathLoaderButton({
   return (
     <LoaderButton
       {...props}
-      onClick={() => {
+      onClick={e => {
+        onClick?.(e);
         startTransition(() => {
           if (shouldReplace) {
             router.replace(path, { scroll: shouldScroll });
@@ -54,7 +58,7 @@ export default function PathLoaderButton({
           }
         });
       }}
-      isLoading={shouldShowLoader}
+      isLoading={shouldShowLoader || isLoading}
     >
       {children}
     </LoaderButton>

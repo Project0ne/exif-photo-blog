@@ -1,10 +1,9 @@
 import AdminChildPage from '@/components/AdminChildPage';
 import { redirect } from 'next/navigation';
-import { getPhotosCached } from '@/photo/cache';
-import TagForm from '@/tag/TagForm';
-import { PATH_ADMIN, PATH_ADMIN_TAGS, pathForTag } from '@/app/paths';
+import { getPhotosCached, getPhotosMetaCached } from '@/photo/cache';
+import AdminTagForm from '@/admin/AdminTagForm';
+import { PATH_ADMIN, PATH_ADMIN_TAGS, pathForTag } from '@/app/path';
 import PhotoLightbox from '@/photo/PhotoLightbox';
-import { getPhotosMeta } from '@/photo/db/query';
 import AdminTagBadge from '@/admin/AdminTagBadge';
 
 const MAX_PHOTO_TO_SHOW = 6;
@@ -13,7 +12,7 @@ interface Props {
   params: Promise<{ tag: string }>
 }
 
-export default async function PhotoPageEdit({
+export default async function TagPageEdit({
   params,
 }: Props) {
   const { tag: tagFromParams } = await params;
@@ -24,7 +23,7 @@ export default async function PhotoPageEdit({
     { count },
     photos,
   ] = await Promise.all([
-    getPhotosMeta({ tag }),
+    getPhotosMetaCached({ tag }),
     getPhotosCached({ tag, limit: MAX_PHOTO_TO_SHOW }),
   ]);
 
@@ -36,13 +35,13 @@ export default async function PhotoPageEdit({
       backLabel="Tags"
       breadcrumb={<AdminTagBadge {...{ tag, count, hideBadge: true }} />}
     >
-      <TagForm {...{ tag, photos }}>
+      <AdminTagForm {...{ tag }}>
         <PhotoLightbox
           {...{ count, photos, tag }}
           maxPhotosToShow={MAX_PHOTO_TO_SHOW}
           moreLink={pathForTag(tag)}
         />
-      </TagForm>
+      </AdminTagForm>
     </AdminChildPage>
   );
 };

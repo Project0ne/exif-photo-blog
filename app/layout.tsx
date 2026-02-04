@@ -4,35 +4,50 @@ import { clsx } from 'clsx/lite';
 import {
   BASE_URL,
   DEFAULT_THEME,
-  SITE_DESCRIPTION,
-  SITE_DOMAIN_OR_TITLE,
-  SITE_TITLE,
+  PRESERVE_ORIGINAL_UPLOADS,
+  META_DESCRIPTION,
+  META_TITLE,
+  HTML_LANG,
+  SITE_FEEDS_ENABLED,
+  ADMIN_DEBUG_TOOLS_ENABLED,
+  PAGE_SCRIPT_URLS,
+  VERCEL_GIT_COMMIT_SHA_SHORT,
+  DEBUG_OUTPUTS_ENABLED,
 } from '@/app/config';
-import AppStateProvider from '@/state/AppStateProvider';
+import AppStateProvider from '@/app/AppStateProvider';
 import ToasterWithThemes from '@/toast/ToasterWithThemes';
 import PhotoEscapeHandler from '@/photo/PhotoEscapeHandler';
 import { Metadata } from 'next/types';
 import { ThemeProvider } from 'next-themes';
 import Nav from '@/app/Nav';
 import Footer from '@/app/Footer';
-import CommandK from '@/app/CommandK';
-import SwrConfigClient from '@/state/SwrConfigClient';
-import AdminBatchEditPanel from '@/admin/AdminBatchEditPanel';
+import CommandK from '@/cmdk/CommandK';
+import SwrConfigClient from '@/swr/SwrConfigClient';
 import ShareModals from '@/share/ShareModals';
+import AdminUploadPanel from '@/admin/upload/AdminUploadPanel';
+import { revalidatePath } from 'next/cache';
+import RecipeModal from '@/recipe/RecipeModal';
+import ThemeColors from '@/app/ThemeColors';
+import AppTextProvider from '@/i18n/state/AppTextProvider';
+import SharedHoverProvider from '@/components/shared-hover/SharedHoverProvider';
+import { PATH_FEED_JSON, PATH_RSS_XML } from '@/app/path';
+import SelectPhotosProvider from '@/admin/select/SelectPhotosProvider';
+import AdminBatchEditPanel from '@/admin/select/AdminBatchEditPanel';
+import Script from 'next/script';
 
 import '../tailwind.css';
 
 export const metadata: Metadata = {
-  title: SITE_TITLE,
-  description: SITE_DESCRIPTION,
+  title: META_TITLE,
+  description: META_DESCRIPTION,
   ...BASE_URL && { metadataBase: new URL(BASE_URL) },
   openGraph: {
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
+    title: META_TITLE,
+    description: META_DESCRIPTION,
   },
   twitter: {
-    title: SITE_TITLE,
-    description: SITE_DESCRIPTION,
+    title: META_TITLE,
+    description: META_DESCRIPTION,
   },
   icons: [{
     url: '/favicon.ico',
@@ -57,6 +72,19 @@ export const metadata: Metadata = {
     type: 'image/png',
     sizes: '180x180',
   }],
+  ...DEBUG_OUTPUTS_ENABLED && {
+    other: {
+      'build': VERCEL_GIT_COMMIT_SHA_SHORT ?? 'unknown',
+    },
+  },
+  ...SITE_FEEDS_ENABLED && {
+    alternates: {
+      types: {
+        'application/rss+xml': PATH_RSS_XML,
+        'application/json': PATH_FEED_JSON,
+      },
+    },
+  },
 };
 
 export default function RootLayout({
@@ -66,40 +94,66 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="en"
+      lang={HTML_LANG}
       // Suppress hydration errors due to next-themes behavior
       suppressHydrationWarning
     >
-      <body>
-        <AppStateProvider>
-          <ThemeProvider attribute="class" defaultTheme={DEFAULT_THEME}>
-            <SwrConfigClient>
-              <main className={clsx(
-                'mx-3 mb-3',
-                'lg:mx-6 lg:mb-6',
-                // Center on large screens
-                // 1280px width defined in components/SiteGrid.tsx
-                '3xl:mx-auto 3xl:w-[1280px]',
-              )}>
-                <Nav siteDomainOrTitle={SITE_DOMAIN_OR_TITLE} />
-                <AdminBatchEditPanel />
-                <div className={clsx(
-                  'min-h-[16rem] sm:min-h-[30rem]',
-                  'mb-12',
-                )}>
-                  <ShareModals />
-                  {children}
-                </div>
-                <Footer />
-              </main>
-              <CommandK />
-            </SwrConfigClient>
-            <Analytics debug={false} />
-            <SpeedInsights debug={false}  />
-            <PhotoEscapeHandler />
-            <ToasterWithThemes />
-          </ThemeProvider>
+      <body className={clsx(
+        // Center on large screens
+        '3xl:flex flex-col items-center',
+      )}>
+        <AppStateProvider areAdminDebugToolsEnabled={ADMIN_DEBUG_TOOLS_ENABLED}>
+          <AppTextProvider>
+            <SelectPhotosProvider>
+              <ThemeColors />
+              <ThemeProvider attribute="class" defaultTheme={DEFAULT_THEME}>
+                <SwrConfigClient>
+                  <SharedHoverProvider>
+                    <div className={clsx(
+                      'mx-3 mb-3',
+                      'lg:mx-6 lg:mb-6',
+                    )}>
+                      <Nav />
+                      <main>
+                        <ShareModals />
+                        <RecipeModal />
+                        <div className={clsx(
+                          'min-h-[16rem] sm:min-h-[30rem]',
+                          'mb-12',
+                          'space-y-5',
+                        )}>
+                          <AdminUploadPanel
+                            shouldResize={!PRESERVE_ORIGINAL_UPLOADS}
+                            onLastUpload={async () => {
+                              'use server';
+                              // Update upload count in admin nav
+                              revalidatePath('/admin', 'layout');
+                            }}
+                          />
+                          <AdminBatchEditPanel
+                            onBatchActionComplete={async () => {
+                              'use server';
+                              // Update upload count in admin nav
+                              revalidatePath('/admin', 'layout');
+                            }}
+                          />
+                          {children}
+                        </div>
+                      </main>
+                      <Footer />
+                    </div>
+                    <CommandK />
+                  </SharedHoverProvider>
+                </SwrConfigClient>
+                <Analytics debug={false} />
+                <SpeedInsights debug={false} />
+                <PhotoEscapeHandler />
+                <ToasterWithThemes />
+              </ThemeProvider>
+            </SelectPhotosProvider>
+          </AppTextProvider>
         </AppStateProvider>
+        {PAGE_SCRIPT_URLS.map(url => <Script key={url} src={url} />)}
       </body>
     </html>
   );
